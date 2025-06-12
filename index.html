@@ -129,8 +129,8 @@
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-    <audio id="background-music" loop autoplay>
-        <source src="musik_latar.mp3" type="audio/mpeg">
+    <audio id="background-music" loop>
+        <source src="musik.mp3" type="audio/mpeg">
     </audio>
 
     <div class="container mx-auto bg-white rounded-lg shadow-lg max-w-6xl">
@@ -214,6 +214,12 @@
                 <p class="text-gray-400 mt-2">The file will be processed locally in your browser</p>
             </div>
         </div>
+    </div>
+
+    <div id="play-overlay" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+        <button id="play-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-2xl transition duration-300 transform hover:scale-105">
+            <i class="fas fa-play mr-2"></i> Mulai
+        </button>
     </div>
 
     <script>
@@ -681,6 +687,27 @@
                 } else {
                     toggleDarkMode.innerHTML = '<i class="fas fa-moon mr-1"></i>';
                 }
+            }
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const playOverlay = document.getElementById('play-overlay');
+            const playButton = document.getElementById('play-button');
+            const backgroundMusic = document.getElementById('background-music');
+
+            if (playButton) {
+                playButton.addEventListener('click', () => {
+                    backgroundMusic.play().then(() => {
+                        playOverlay.style.display = 'none';
+                    }).catch(error => {
+                        console.error("Audio playback failed:", error);
+                        // Still hide overlay even if playback fails, to not block the site
+                        playOverlay.style.display = 'none';
+                        alert("Gagal memutar audio. Pastikan file 'musik.mp3' ada di folder yang sama dan browser Anda mengizinkan pemutaran.");
+                    });
+                });
             }
         });
     </script>
