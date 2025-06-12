@@ -716,5 +716,27 @@
             }
         });
     </script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const playOverlay = document.getElementById('play-overlay');
+        const playButton = document.getElementById('play-button');
+        const backgroundMusic = document.getElementById('background-music');
+
+        if (playButton && playOverlay && backgroundMusic) {
+            playButton.addEventListener('click', () => {
+                backgroundMusic.play().then(() => {
+                    playOverlay.style.display = 'none';
+                }).catch(error => {
+                    console.error("Gagal memutar audio:", error);
+                    playOverlay.style.display = 'none';
+                    alert("Gagal memutar audio. Pastikan file audio ada di folder yang sama.");
+                });
+            });
+        } else {
+            console.error("Elemen penting tidak ditemukan. Pastikan ada ID: #play-overlay, #play-button, dan #background-music");
+        }
+    });
+</script>
 </body>
 </html>
