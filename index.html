@@ -125,12 +125,17 @@
                 filter: hue-rotate(360deg);
             }
         }
+
+        /* === PERUBAHAN 1: Menambahkan z-index untuk overlay di sini === */
+        #play-overlay {
+            z-index: 101; /* Nilai ini lebih tinggi dari z-index: 100 milik header */
+        }
         
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <audio id="background-music" loop>
-        <source src="musik.mp3" type="audio/mpeg">
+        <source src="musik_.mp3" type="audio/mpeg">
     </audio>
 
     <div class="container mx-auto bg-white rounded-lg shadow-lg max-w-6xl">
@@ -216,14 +221,14 @@
         </div>
     </div>
 
-    <div id="play-overlay" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+    <div id="play-overlay" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center">
         <button id="play-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-2xl transition duration-300 transform hover:scale-105">
-            <i class="fas fa-play mr-2"></i> Mulai
+            <i class="fas fa-play mr-2"></i> Start
         </button>
     </div>
 
     <script>
-        // ... (KESELURUHAN KODE JAVASCRIPT VIEWER ANDA ADA DI SINI) ...
+        // ... (KODE JAVASCRIPT VIEWER TIDAK BERUBAH) ...
         document.addEventListener('DOMContentLoaded', function() {
             // DOM Elements
             const fileInput = document.getElementById('fileInput');
@@ -577,7 +582,7 @@
                 
                 classHeaders.forEach(icon => {
                     icon.classList.remove('rotate-90');
-                });
+});
                 
                 classContents.forEach(content => {
                     content.classList.add('hidden');
