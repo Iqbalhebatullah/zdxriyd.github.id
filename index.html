@@ -107,8 +107,8 @@
                 background-color: #059669;
             }
         }
-        
-        /* CSS untuk Judul Warna-warni */
+
+        /* FITUR DITAMBAHKAN: CSS untuk Judul Warna-warni & Overlay */
         .colorful-title {
             background-image: linear-gradient(90deg, #f87171, #fb923c, #facc15, #4ade80, #60a5fa, #a78bfa);
             -webkit-background-clip: text;
@@ -116,26 +116,19 @@
             -webkit-text-fill-color: transparent;
             animation: hue-rotate 10s linear infinite;
         }
-
         @keyframes hue-rotate {
-            from {
-                filter: hue-rotate(0deg);
-            }
-            to {
-                filter: hue-rotate(360deg);
-            }
+            from { filter: hue-rotate(0deg); }
+            to { filter: hue-rotate(360deg); }
         }
-
-        /* === PERUBAHAN 1: Menambahkan z-index untuk overlay di sini === */
         #play-overlay {
-            z-index: 101; /* Nilai ini lebih tinggi dari z-index: 100 milik header */
+            z-index: 101; /* Memastikan overlay di atas header */
         }
-        
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
+
     <audio id="background-music" loop>
-        <source src="musik_.mp3" type="audio/mpeg">
+        <source src="musik.mp3" type="audio/mpeg">
     </audio>
 
     <div class="container mx-auto bg-white rounded-lg shadow-lg max-w-6xl">
@@ -223,12 +216,11 @@
 
     <div id="play-overlay" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center">
         <button id="play-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-2xl transition duration-300 transform hover:scale-105">
-            <i class="fas fa-play mr-2"></i> Start
+            <i class="fas fa-play mr-2"></i> Mulai
         </button>
     </div>
 
     <script>
-        // ... (KODE JAVASCRIPT VIEWER TIDAK BERUBAH) ...
         document.addEventListener('DOMContentLoaded', function() {
             // DOM Elements
             const fileInput = document.getElementById('fileInput');
@@ -420,10 +412,10 @@
                     classHeader.innerHTML = `
                         <div class="flex items-center">
                             <i class="fas fa-chevron-right mr-2 transform transition-transform duration-200"></i>
-                            <h2 class="text-lg font-semibold">${highlightText(className, searchTerm && showClasses ? searchTerm : '')}</h2>
-                        </div>
-                        <div class="text-sm text-gray-500">
-                            <span>${classData.fields.length} fields</span>
+                            <h2 class="text-lg font-semibold"><span class="math-inline">\{highlightText\(className, searchTerm && showClasses ? searchTerm \: ''\)\}</h2\>
+</div\>
+<div class\="text\-sm text\-gray\-500"\>
+<span\></span>{classData.fields.length} fields</span>
                             <span class="mx-2">|</span>
                             <span>${classData.methods.length} methods</span>
                         </div>
@@ -457,8 +449,8 @@
                             const row = document.createElement('tr');
                             row.className = 'border-t border-gray-100';
                             row.innerHTML = `
-                                <td class="p-2 font-mono">${highlightText(field.type, searchTerm && showFields ? searchTerm : '')}</td>
-                                <td class="p-2 font-mono">${highlightText(field.name, searchTerm && showFields ? searchTerm : '')}</td>
+                                <td class="p-2 font-mono"><span class="math-inline">\{highlightText\(field\.type, searchTerm && showFields ? searchTerm \: ''\)\}</td\>
+<td class\="p\-2 font\-mono"\></span>{highlightText(field.name, searchTerm && showFields ? searchTerm : '')}</td>
                                 <td class="p-2 text-gray-500">${field.offset}</td>
                             `;
                             tbody.appendChild(row);
@@ -492,10 +484,10 @@
                             const row = document.createElement('tr');
                             row.className = 'border-t border-gray-100';
                             row.innerHTML = `
-                                <td class="p-2 font-mono">${highlightText(method.returnType, searchTerm && showMethods ? searchTerm : '')}</td>
-                                <td class="p-2 font-mono">${highlightText(method.name, searchTerm && showMethods ? searchTerm : '')}</td>
-                                <td class="p-2 font-mono">${highlightText(method.arguments, searchTerm && showMethods ? searchTerm : '')}</td>
-                                <td class="p-2 text-gray-500">${method.offset}</td>
+                                <td class="p-2 font-mono"><span class="math-inline">\{highlightText\(method\.returnType, searchTerm && showMethods ? searchTerm \: ''\)\}</td\>
+<td class\="p\-2 font\-mono"\></span>{highlightText(method.name, searchTerm && showMethods ? searchTerm : '')}</td>
+                                <td class="p-2 font-mono"><span class="math-inline">\{highlightText\(method\.arguments, searchTerm && showMethods ? searchTerm \: ''\)\}</td\>
+<td class\="p\-2 text\-gray\-500"\></span>{method.offset}</td>
                             `;
                             tbody.appendChild(row);
                         });
@@ -582,7 +574,7 @@
                 
                 classHeaders.forEach(icon => {
                     icon.classList.remove('rotate-90');
-});
+                });
                 
                 classContents.forEach(content => {
                     content.classList.add('hidden');
@@ -662,7 +654,7 @@
                 if (classData.methods.length > 0) {
                     text += "Methods:\n";
                     classData.methods.forEach(method => {
-                        text += `  ${method.returnType} ${method.name}(${method.arguments}) @ ${method.offset}\n`;
+                        text += `  ${method.returnType} <span class="math-inline">\{method\.name\}\(</span>{method.arguments}) @ ${method.offset}\n`;
                     });
                 }
                 
@@ -695,48 +687,27 @@
             }
         });
     </script>
-
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const playOverlay = document.getElementById('play-overlay');
             const playButton = document.getElementById('play-button');
             const backgroundMusic = document.getElementById('background-music');
 
-            if (playButton) {
+            if (playButton && playOverlay && backgroundMusic) {
                 playButton.addEventListener('click', () => {
                     backgroundMusic.play().then(() => {
                         playOverlay.style.display = 'none';
                     }).catch(error => {
-                        console.error("Audio playback failed:", error);
-                        // Still hide overlay even if playback fails, to not block the site
+                        console.error("Gagal memutar audio:", error);
                         playOverlay.style.display = 'none';
-                        alert("Gagal memutar audio. Pastikan file 'musik.mp3' ada di folder yang sama dan browser Anda mengizinkan pemutaran.");
+                        alert("Gagal memutar audio. Pastikan file audio ada di folder yang sama.");
                     });
                 });
+            } else {
+                console.error("Elemen musik tidak ditemukan. Pastikan ID sudah benar.");
             }
         });
     </script>
-    
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const playOverlay = document.getElementById('play-overlay');
-        const playButton = document.getElementById('play-button');
-        const backgroundMusic = document.getElementById('background-music');
-
-        if (playButton && playOverlay && backgroundMusic) {
-            playButton.addEventListener('click', () => {
-                backgroundMusic.play().then(() => {
-                    playOverlay.style.display = 'none';
-                }).catch(error => {
-                    console.error("Gagal memutar audio:", error);
-                    playOverlay.style.display = 'none';
-                    alert("Gagal memutar audio. Pastikan file audio ada di folder yang sama.");
-                });
-            });
-        } else {
-            console.error("Elemen penting tidak ditemukan. Pastikan ada ID: #play-overlay, #play-button, dan #background-music");
-        }
-    });
-</script>
 </body>
 </html>
