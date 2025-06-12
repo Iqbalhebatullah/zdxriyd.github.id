@@ -107,15 +107,33 @@
                 background-color: #059669;
             }
         }
+        
+        /* === PERUBAHAN 1: CSS UNTUK JUDUL DITAMBAHKAN DI SINI === */
+        .colorful-title {
+            background-image: linear-gradient(90deg, #f87171, #fb923c, #facc15, #4ade80, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: hue-rotate 10s linear infinite;
+        }
+
+        @keyframes hue-rotate {
+            from {
+                filter: hue-rotate(0deg);
+            }
+            to {
+                filter: hue-rotate(360deg);
+            }
+        }
+        
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto bg-white rounded-lg shadow-lg max-w-6xl">
-        <!-- Non-sticky Header Section -->
         <div class="p-6 pb-0">
+            
             <h1 class="text-3xl font-bold text-center mb-6 colorful-title">dump.cs Viewer</h1>
             
-            <!-- File Upload Section -->
             <div class="mb-6 text-center">
                 <label for="fileInput" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded cursor-pointer transition duration-300">
                     <i class="fas fa-file-upload mr-2"></i> Import dump.cs File
@@ -124,7 +142,6 @@
                 <p id="fileName" class="mt-2 text-gray-600 text-sm"></p>
             </div>
             
-            <!-- Stats Section - Non-sticky -->
             <div id="statsSection" class="mb-6 hidden">
                 <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded">
                     <div class="flex justify-between items-center">
@@ -140,9 +157,7 @@
             </div>
         </div>
         
-        <!-- Fixed Header Section - Only Search and Controls -->
         <div class="sticky-header rounded-t-lg">
-            <!-- Controls Section -->
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="relative w-full md:w-1/2">
                     <div class="flex items-center">
@@ -169,7 +184,6 @@
                 </div>
             </div>
             
-            <!-- Search Filter Options -->
             <div class="flex justify-center mt-2 mb-2 gap-6">
                 <label class="inline-flex items-center">
                     <input type="checkbox" id="filterClasses" class="form-checkbox h-4 w-4 text-blue-600" checked>
@@ -186,14 +200,11 @@
             </div>
         </div>
         
-        <!-- Scrollable Content Area -->
         <div class="content-area p-6 pt-3">
-            <!-- Results Section -->
             <div id="resultsContainer" class="hidden">
                 <div id="results" class="space-y-4"></div>
             </div>
             
-            <!-- Initial State -->
             <div id="initialState" class="text-center py-12">
                 <i class="fas fa-file-code text-6xl text-gray-300 mb-4"></i>
                 <p class="text-xl text-gray-500">Import a dump.cs file to view its contents</p>
@@ -670,4 +681,4 @@
         });
     </script>
 </body>
-</html> 
+</html>
