@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dump.cs Viewer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .hidden {
+            display: none;
+        }
+        .highlight {
+            background-color: rgba(255, 255, 0, 0.3);
+        }
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: white;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .content-area {
+            padding-top: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+        /* Dark mode toggle transition */
+        body {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        @media (prefers-color-scheme: dark) {
+            .dark-mode {
+                background-color: #111827; /* Darker background */
+                color: #f3f4f6; /* Brighter text */
+            }
+            .dark-mode .bg-white {
+                background-color: #1f2937; /* Darker container background */
+            }
+            .dark-mode .border-gray-200 {
+                border-color: #374151; /* Darker border */
+            }
+            .dark-mode .text-gray-700 {
+                color: #f3f4f6; /* Brighter text */
+            }
+            .dark-mode .text-gray-500, .dark-mode .text-gray-600, .dark-mode .text-gray-400 {
+                color: #9ca3af; /* Better contrast for secondary text */
+            }
+            .dark-mode .bg-gray-100 {
+                background-color: #374151; /* Darker gray background */
+            }
+            .dark-mode .bg-gray-50 {
+                background-color: #2d3748; /* Darker table header */
+            }
+            .dark-mode .border-gray-100 {
+                border-color: #374151; /* Darker table borders */
+            }
+            .dark-mode .highlight {
+                background-color: rgba(234, 179, 8, 0.2); /* Better highlight color */
+                color: #fef08a; /* Brighter highlighted text */
+            }
+            .dark-mode .sticky-header {
+                background-color: #1f2937; /* Darker header background */
+                border-bottom: 1px solid #374151;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); /* Enhanced shadow */
+            }
+            .dark-mode input, .dark-mode button {
+                color-scheme: dark; /* Native dark inputs */
+            }
+            .dark-mode input {
+                background-color: #374151;
+                border-color: #4b5563;
+                color: #f3f4f6;
+            }
+            .dark-mode input::placeholder {
+                color: #9ca3af;
+            }
+            .dark-mode .bg-blue-100 {
+                background-color: #1e3a8a; /* Darker blue for info box */
+            }
+            .dark-mode .text-blue-700 {
+                color: #93c5fd; /* Brighter blue text */
+            }
+            .dark-mode .border-blue-500 {
+                border-color: #3b82f6; /* Brighter blue border */
+            }
+            /* Button styles for dark mode */
+            .dark-mode .bg-gray-200 {
+                background-color: #374151;
+            }
+            .dark-mode .bg-gray-200:hover {
+                background-color: #4b5563;
+            }
+            .dark-mode .text-gray-800 {
+                color: #f3f4f6;
+            }
+            /* Copy button in dark mode */
+            .dark-mode .bg-green-200 {
+                background-color: #065f46;
+            }
+            .dark-mode .bg-green-200:hover {
+                background-color: #047857;
+            }
+            .dark-mode .bg-green-300 {
+                background-color: #059669;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto bg-white rounded-lg shadow-lg max-w-6xl">
+        <!-- Non-sticky Header Section -->
+        <div class="p-6 pb-0">
+            <h1 class="text-3xl font-bold text-center mb-6">dump.cs Viewer</h1>
+            
+            <!-- File Upload Section -->
+            <div class="mb-6 text-center">
+                <label for="fileInput" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded cursor-pointer transition duration-300">
+                    <i class="fas fa-file-upload mr-2"></i> Import dump.cs File
+                </label>
+                <input id="fileInput" type="file" accept=".cs" class="hidden" />
+                <p id="fileName" class="mt-2 text-gray-600 text-sm"></p>
+            </div>
+            
+            <!-- Stats Section - Non-sticky -->
+            <div id="statsSection" class="mb-6 hidden">
+                <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p id="classCount" class="font-medium text-lg">0 classes found</p>
+                            <p id="fieldMethodCount" class="text-sm">0 fields, 0 methods total</p>
+                        </div>
+                        <div class="text-right">
+                            <p id="searchResults" class="font-medium hidden">0 matches found</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Fixed Header Section - Only Search and Controls -->
+        <div class="sticky-header rounded-t-lg">
+            <!-- Controls Section -->
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="relative w-full md:w-1/2">
+                    <div class="flex items-center">
+                        <input type="text" id="searchInput" placeholder="Search classes, fields, methods..." 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button id="clearSearch" class="absolute right-3 top-2 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button id="expandAllBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded transition duration-300">
+                        <i class="fas fa-expand-alt mr-1"></i> Expand All
+                    </button>
+                    <button id="collapseAllBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded transition duration-300">
+                        <i class="fas fa-compress-alt mr-1"></i> Collapse All
+                    </button>
+                    <button id="exportBtn" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded transition duration-300" disabled>
+                        <i class="fas fa-download mr-1"></i> Export
+                    </button>
+                    <button id="toggleDarkMode" class="bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 px-4 rounded transition duration-300">
+                        <i class="fas fa-moon mr-1"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Search Filter Options -->
+            <div class="flex justify-center mt-2 mb-2 gap-6">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" id="filterClasses" class="form-checkbox h-4 w-4 text-blue-600" checked>
+                    <span class="ml-2">Classes</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" id="filterFields" class="form-checkbox h-4 w-4 text-blue-600" checked>
+                    <span class="ml-2">Fields</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" id="filterMethods" class="form-checkbox h-4 w-4 text-blue-600" checked>
+                    <span class="ml-2">Methods</span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Scrollable Content Area -->
+        <div class="content-area p-6 pt-3">
+            <!-- Results Section -->
+            <div id="resultsContainer" class="hidden">
+                <div id="results" class="space-y-4"></div>
+            </div>
+            
+            <!-- Initial State -->
+            <div id="initialState" class="text-center py-12">
+                <i class="fas fa-file-code text-6xl text-gray-300 mb-4"></i>
+                <p class="text-xl text-gray-500">Import a dump.cs file to view its contents</p>
+                <p class="text-gray-400 mt-2">The file will be processed locally in your browser</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const fileInput = document.getElementById('fileInput');
+            const fileName = document.getElementById('fileName');
+            const searchInput = document.getElementById('searchInput');
+            const clearSearch = document.getElementById('clearSearch');
+            const expandAllBtn = document.getElementById('expandAllBtn');
+            const collapseAllBtn = document.getElementById('collapseAllBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const results = document.getElementById('results');
+            const initialState = document.getElementById('initialState');
+            const statsSection = document.getElementById('statsSection');
+            const classCount = document.getElementById('classCount');
+            const fieldMethodCount = document.getElementById('fieldMethodCount');
+            const searchResults = document.getElementById('searchResults');
+            const toggleDarkMode = document.getElementById('toggleDarkMode');
+            const filterClasses = document.getElementById('filterClasses');
+            const filterFields = document.getElementById('filterFields');
+            const filterMethods = document.getElementById('filterMethods');
+            
+            // State
+            let parsedData = null;
+            let isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            // Apply dark mode if needed
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                toggleDarkMode.innerHTML = '<i class="fas fa-sun mr-1"></i>';
+            }
+            
+            // Event Listeners
+            fileInput.addEventListener('change', handleFileUpload);
+            searchInput.addEventListener('input', handleSearch);
+            clearSearch.addEventListener('click', clearSearchInput);
+            expandAllBtn.addEventListener('click', expandAll);
+            collapseAllBtn.addEventListener('click', collapseAll);
+            exportBtn.addEventListener('click', exportHTML);
+            toggleDarkMode.addEventListener('click', toggleDarkModeHandler);
+            filterClasses.addEventListener('change', handleSearch);
+            filterFields.addEventListener('change', handleSearch);
+            filterMethods.addEventListener('change', handleSearch);
+            
+            // File Upload Handler
+            function handleFileUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                fileName.textContent = `File: ${file.name}`;
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const content = event.target.result;
+                    parsedData = parseDumpCS(content);
+                    renderResults(parsedData);
+                    
+                    // Update UI state
+                    initialState.classList.add('hidden');
+                    resultsContainer.classList.remove('hidden');
+                    statsSection.classList.remove('hidden');
+                    exportBtn.disabled = false;
+                    
+                    // Update stats
+                    const classesCount = Object.keys(parsedData).length;
+                    let fieldsCount = 0;
+                    let methodsCount = 0;
+                    
+                    Object.values(parsedData).forEach(classData => {
+                        fieldsCount += classData.fields.length;
+                        methodsCount += classData.methods.length;
+                    });
+                    
+                    classCount.textContent = `${classesCount} classes found`;
+                    fieldMethodCount.textContent = `${fieldsCount} fields, ${methodsCount} methods total`;
+                };
+                reader.readAsText(file);
+            }
+            
+            // Parse dump.cs content
+            function parseDumpCS(content) {
+                const lines = content.split('\n');
+                const output = {};
+                let currentClass = null;
+                
+                // Regex patterns
+                const classPattern = /^\s*(?:\[.*\])?\s*(public|internal|private|protected)?\s*(sealed|abstract|static)?\s*class\s+([\w<>.]+)/;
+                const fieldPattern = /^\s*(public|private|internal|protected)?\s*(struct|class)?\s*([\w<>.\[\]]+(?:\s*<[^>]+>)?)\s+(\w+);\s*\/\/\s*(0x[0-9A-Fa-f]+)/;
+                const methodPattern = /^\s*(public|private|internal|protected)?\s*([\w<>.\[\]]+)\s+(\w+)\s*\((.*?)\)\s*;\s*\/\/\s*(0x[0-9A-Fa-f]+)/;
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    
+                    // Class detection
+                    const classMatch = line.match(classPattern);
+                    if (classMatch) {
+                        currentClass = classMatch[3];
+                        if (!output[currentClass]) {
+                            output[currentClass] = {
+                                fields: [],
+                                methods: []
+                            };
+                        }
+                        continue;
+                    }
+                    
+                    if (currentClass) {
+                        // Field extraction
+                        const fieldMatch = line.match(fieldPattern);
+                        if (fieldMatch) {
+                            const fieldType = fieldMatch[3];
+                            const fieldName = fieldMatch[4];
+                            const offset = fieldMatch[5];
+                            output[currentClass].fields.push({
+                                type: fieldType,
+                                name: fieldName,
+                                offset: offset
+                            });
+                            continue;
+                        }
+                        
+                        // Method extraction
+                        const methodMatch = line.match(methodPattern);
+                        if (methodMatch) {
+                            const returnType = methodMatch[2];
+                            const methodName = methodMatch[3];
+                            const arguments = methodMatch[4];
+                            const offset = methodMatch[5];
+                            output[currentClass].methods.push({
+                                returnType: returnType,
+                                name: methodName,
+                                arguments: arguments,
+                                offset: offset
+                            });
+                            continue;
+                        }
+                    }
+                }
+                
+                return output;
+            }
+            
+            // Render results
+            function renderResults(data, searchTerm = '') {
+                results.innerHTML = '';
+                let matchCount = 0;
+                
+                // Get filter states
+                const showClasses = filterClasses.checked;
+                const showFields = filterFields.checked;
+                const showMethods = filterMethods.checked;
+                
+                Object.keys(data).sort().forEach(className => {
+                    const classData = data[className];
+                    const classElement = document.createElement('div');
+                    classElement.className = 'border border-gray-200 rounded-lg overflow-hidden mb-4';
+                    
+                    // Check if class matches search
+                    const classMatches = searchTerm && showClasses ? className.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+                    let fieldsMatch = false;
+                    let methodsMatch = false;
+                    
+                    // Check if any fields match search
+                    if (searchTerm && showFields) {
+                        fieldsMatch = classData.fields.some(field => 
+                            field.type.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            field.name.toLowerCase().includes(searchTerm.toLowerCase())
+                        );
+                    }
+                    
+                    // Check if any methods match search
+                    if (searchTerm && showMethods) {
+                        methodsMatch = classData.methods.some(method => 
+                            method.returnType.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            method.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            method.arguments.toLowerCase().includes(searchTerm.toLowerCase())
+                        );
+                    }
+                    
+                    // If search term exists and nothing matches, hide this class
+                    if (searchTerm && !classMatches && !fieldsMatch && !methodsMatch) {
+                        classElement.classList.add('hidden');
+                    } else if (searchTerm) {
+                        matchCount++;
+                    }
+                    
+                    // Class header
+                    const classHeader = document.createElement('div');
+                    classHeader.className = 'flex justify-between items-center p-4 bg-gray-100 cursor-pointer hover:bg-gray-200 transition duration-200';
+                    classHeader.innerHTML = `
+                        <div class="flex items-center">
+                            <i class="fas fa-chevron-right mr-2 transform transition-transform duration-200"></i>
+                            <h2 class="text-lg font-semibold">${highlightText(className, searchTerm && showClasses ? searchTerm : '')}</h2>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <span>${classData.fields.length} fields</span>
+                            <span class="mx-2">|</span>
+                            <span>${classData.methods.length} methods</span>
+                        </div>
+                    `;
+                    
+                    // Class content
+                    const classContent = document.createElement('div');
+                    classContent.className = 'p-4 hidden';
+                    
+                    // Fields section
+                    if (classData.fields.length > 0) {
+                        const fieldsSection = document.createElement('div');
+                        fieldsSection.className = 'mb-4';
+                        fieldsSection.innerHTML = `<h3 class="text-md font-semibold mb-2">Fields</h3>`;
+                        
+                        const fieldsTable = document.createElement('table');
+                        fieldsTable.className = 'w-full text-sm';
+                        fieldsTable.innerHTML = `
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="text-left p-2">Type</th>
+                                    <th class="text-left p-2">Name</th>
+                                    <th class="text-left p-2">Offset</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        `;
+                        
+                        const tbody = fieldsTable.querySelector('tbody');
+                        classData.fields.forEach(field => {
+                            const row = document.createElement('tr');
+                            row.className = 'border-t border-gray-100';
+                            row.innerHTML = `
+                                <td class="p-2 font-mono">${highlightText(field.type, searchTerm && showFields ? searchTerm : '')}</td>
+                                <td class="p-2 font-mono">${highlightText(field.name, searchTerm && showFields ? searchTerm : '')}</td>
+                                <td class="p-2 text-gray-500">${field.offset}</td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                        
+                        fieldsSection.appendChild(fieldsTable);
+                        classContent.appendChild(fieldsSection);
+                    }
+                    
+                    // Methods section
+                    if (classData.methods.length > 0) {
+                        const methodsSection = document.createElement('div');
+                        methodsSection.innerHTML = `<h3 class="text-md font-semibold mb-2">Methods</h3>`;
+                        
+                        const methodsTable = document.createElement('table');
+                        methodsTable.className = 'w-full text-sm';
+                        methodsTable.innerHTML = `
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="text-left p-2">Return Type</th>
+                                    <th class="text-left p-2">Name</th>
+                                    <th class="text-left p-2">Arguments</th>
+                                    <th class="text-left p-2">Offset</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        `;
+                        
+                        const tbody = methodsTable.querySelector('tbody');
+                        classData.methods.forEach(method => {
+                            const row = document.createElement('tr');
+                            row.className = 'border-t border-gray-100';
+                            row.innerHTML = `
+                                <td class="p-2 font-mono">${highlightText(method.returnType, searchTerm && showMethods ? searchTerm : '')}</td>
+                                <td class="p-2 font-mono">${highlightText(method.name, searchTerm && showMethods ? searchTerm : '')}</td>
+                                <td class="p-2 font-mono">${highlightText(method.arguments, searchTerm && showMethods ? searchTerm : '')}</td>
+                                <td class="p-2 text-gray-500">${method.offset}</td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                        
+                        methodsSection.appendChild(methodsTable);
+                        classContent.appendChild(methodsSection);
+                    }
+                    
+                    // Add copy button
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 rounded text-sm transition duration-300';
+                    copyButton.innerHTML = '<i class="fas fa-copy mr-1"></i> Copy Class Info';
+                    copyButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        copyClassInfo(className, classData);
+                    });
+                    classContent.appendChild(copyButton);
+                    
+                    // Add toggle functionality
+                    classHeader.addEventListener('click', () => {
+                        const icon = classHeader.querySelector('i');
+                        icon.classList.toggle('transform');
+                        icon.classList.toggle('rotate-90');
+                        classContent.classList.toggle('hidden');
+                    });
+                    
+                    classElement.appendChild(classHeader);
+                    classElement.appendChild(classContent);
+                    results.appendChild(classElement);
+                });
+                
+                // Update search results count
+                if (searchTerm) {
+                    searchResults.textContent = `${matchCount} matches found`;
+                    searchResults.classList.remove('hidden');
+                } else {
+                    searchResults.classList.add('hidden');
+                }
+            }
+            
+            // Highlight search term in text
+            function highlightText(text, searchTerm) {
+                if (!searchTerm) return text;
+                
+                const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+                return text.replace(regex, '<span class="highlight">$1</span>');
+            }
+            
+            // Escape regex special characters
+            function escapeRegExp(string) {
+                return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            }
+            
+            // Search handler
+            function handleSearch() {
+                const searchTerm = searchInput.value.trim();
+                renderResults(parsedData, searchTerm);
+            }
+            
+            // Clear search
+            function clearSearchInput() {
+                searchInput.value = '';
+                handleSearch();
+            }
+            
+            // Expand all classes
+            function expandAll() {
+                const classHeaders = results.querySelectorAll('.fa-chevron-right');
+                const classContents = results.querySelectorAll('.p-4.hidden');
+                
+                classHeaders.forEach(icon => {
+                    icon.classList.add('transform', 'rotate-90');
+                });
+                
+                classContents.forEach(content => {
+                    content.classList.remove('hidden');
+                });
+            }
+            
+            // Collapse all classes
+            function collapseAll() {
+                const classHeaders = results.querySelectorAll('.fa-chevron-right');
+                const classContents = results.querySelectorAll('.p-4:not(.hidden)');
+                
+                classHeaders.forEach(icon => {
+                    icon.classList.remove('rotate-90');
+                });
+                
+                classContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+            }
+            
+            // Export HTML
+            function exportHTML() {
+                // Clone the current document
+                const exportDoc = document.implementation.createHTMLDocument('dump.cs Viewer Export');
+                
+                // Copy styles
+                const styles = document.querySelectorAll('link, style');
+                styles.forEach(style => {
+                    exportDoc.head.appendChild(style.cloneNode(true));
+                });
+                
+                // Create export container
+                const exportContainer = document.createElement('div');
+                exportContainer.className = 'container mx-auto bg-white rounded-lg shadow-lg p-6 max-w-6xl';
+                
+                // Add header
+                const header = document.createElement('div');
+                header.innerHTML = `
+                    <h1 class="text-3xl font-bold text-center mb-6">dump.cs Viewer Export</h1>
+                    <p class="text-center text-gray-500 mb-6">Exported on ${new Date().toLocaleString()}</p>
+                `;
+                exportContainer.appendChild(header);
+                
+                // Clone results
+                const resultsClone = results.cloneNode(true);
+                
+                // Expand all classes in the export
+                const classContents = resultsClone.querySelectorAll('.p-4.hidden');
+                classContents.forEach(content => {
+                    content.classList.remove('hidden');
+                });
+                
+                const classIcons = resultsClone.querySelectorAll('.fa-chevron-right');
+                classIcons.forEach(icon => {
+                    icon.classList.add('transform', 'rotate-90');
+                });
+                
+                // Remove copy buttons
+                const copyButtons = resultsClone.querySelectorAll('button');
+                copyButtons.forEach(button => button.remove());
+                
+                exportContainer.appendChild(resultsClone);
+                exportDoc.body.appendChild(exportContainer);
+                
+                // Create download link
+                const blob = new Blob([exportDoc.documentElement.outerHTML], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'dump_cs_export.html';
+                a.click();
+                
+                // Clean up
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                }, 100);
+            }
+            
+            // Copy class info to clipboard
+            function copyClassInfo(className, classData) {
+                let text = `Class: ${className}\n\n`;
+                
+                if (classData.fields.length > 0) {
+                    text += "Fields:\n";
+                    classData.fields.forEach(field => {
+                        text += `  ${field.type} ${field.name} @ ${field.offset}\n`;
+                    });
+                    text += "\n";
+                }
+                
+                if (classData.methods.length > 0) {
+                    text += "Methods:\n";
+                    classData.methods.forEach(method => {
+                        text += `  ${method.returnType} ${method.name}(${method.arguments}) @ ${method.offset}\n`;
+                    });
+                }
+                
+                navigator.clipboard.writeText(text).then(() => {
+                    // Show temporary success message
+                    const copyBtn = event.target.closest('button');
+                    const originalText = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
+                    copyBtn.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                    copyBtn.classList.add('bg-green-200', 'hover:bg-green-300');
+                    
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalText;
+                        copyBtn.classList.remove('bg-green-200', 'hover:bg-green-300');
+                        copyBtn.classList.add('bg-gray-200', 'hover:bg-gray-300');
+                    }, 2000);
+                });
+            }
+            
+            // Toggle dark mode
+            function toggleDarkModeHandler() {
+                isDarkMode = !isDarkMode;
+                document.body.classList.toggle('dark-mode');
+                
+                if (isDarkMode) {
+                    toggleDarkMode.innerHTML = '<i class="fas fa-sun mr-1"></i>';
+                } else {
+                    toggleDarkMode.innerHTML = '<i class="fas fa-moon mr-1"></i>';
+                }
+            }
+        });
+    </script>
+</body>
+</html> 
