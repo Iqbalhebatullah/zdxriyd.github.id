@@ -108,7 +108,7 @@
             }
         }
         
-        /* === PERUBAHAN 1: CSS UNTUK JUDUL DITAMBAHKAN DI SINI === */
+        /* CSS untuk Judul Warna-warni */
         .colorful-title {
             background-image: linear-gradient(90deg, #f87171, #fb923c, #facc15, #4ade80, #60a5fa, #a78bfa);
             -webkit-background-clip: text;
@@ -131,7 +131,6 @@
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto bg-white rounded-lg shadow-lg max-w-6xl">
         <div class="p-6 pb-0">
-            
             <h1 class="text-3xl font-bold text-center mb-6 colorful-title">dump.cs Viewer</h1>
             
             <div class="mb-6 text-center">
@@ -198,7 +197,15 @@
                     <span class="ml-2">Methods</span>
                 </label>
             </div>
-        </div>
+            
+            <div class="mt-4">
+                <label class="text-sm font-medium text-gray-700">Pemutar Musik:</label>
+                <audio controls class="w-full mt-1">
+                    <source src="https://od.lk/f/MTdfNDY4Nzk3OTNf" type="audio/mpeg">
+                    Browser Anda tidak mendukung elemen audio.
+                </audio>
+            </div>
+            </div>
         
         <div class="content-area p-6 pt-3">
             <div id="resultsContainer" class="hidden">
@@ -214,6 +221,7 @@
     </div>
 
     <script>
+        // ... (KESELURUHAN KODE JAVASCRIPT ANDA ADA DI SINI, TIDAK ADA YANG DIUBAH) ...
         document.addEventListener('DOMContentLoaded', function() {
             // DOM Elements
             const fileInput = document.getElementById('fileInput');
