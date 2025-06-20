@@ -31,6 +31,23 @@
         body {
             transition: background-color 0.3s ease, color 0.3s ease;
         }
+        
+        /* Gaya untuk judul berwarna-warni */
+        .colorful-title {
+            background-image: linear-gradient(90deg, #ef4444, #f97316, #eab308, #84cc16, #22c55e, #14b8a6, #06b6d4, #3b82f6, #8b5cf6, #d946ef, #ef4444);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradient-animation 5s ease infinite;
+        }
+
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         @media (prefers-color-scheme: dark) {
             .dark-mode {
                 background-color: #111827; /* Darker background */
@@ -107,30 +124,9 @@
                 background-color: #059669;
             }
         }
-
-        /* FITUR DITAMBAHKAN: CSS untuk Judul Warna-warni & Overlay */
-        .colorful-title {
-            background-image: linear-gradient(90deg, #f87171, #fb923c, #facc15, #4ade80, #60a5fa, #a78bfa);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: hue-rotate 10s linear infinite;
-        }
-        @keyframes hue-rotate {
-            from { filter: hue-rotate(0deg); }
-            to { filter: hue-rotate(360deg); }
-        }
-        #play-overlay {
-            z-index: 101; /* Memastikan overlay di atas header */
-        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
-
-    <audio id="background-music" loop>
-        <source src="musik.mp3" type="audio/mpeg">
-    </audio>
-
     <div class="container mx-auto bg-white rounded-lg shadow-lg max-w-6xl">
         <div class="p-6 pb-0">
             <h1 class="text-3xl font-bold text-center mb-6 colorful-title">dump.cs Viewer</h1>
@@ -170,6 +166,9 @@
                     </div>
                 </div>
                 <div class="flex gap-2">
+                    <button id="filterBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-300">
+                        <i class="fas fa-filter mr-1"></i> Filter
+                    </button>
                     <button id="expandAllBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded transition duration-300">
                         <i class="fas fa-expand-alt mr-1"></i> Expand All
                     </button>
@@ -214,12 +213,6 @@
         </div>
     </div>
 
-    <div id="play-overlay" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center">
-        <button id="play-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-2xl transition duration-300 transform hover:scale-105">
-            <i class="fas fa-play mr-2"></i> Mulai
-        </button>
-    </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // DOM Elements
@@ -241,10 +234,12 @@
             const filterClasses = document.getElementById('filterClasses');
             const filterFields = document.getElementById('filterFields');
             const filterMethods = document.getElementById('filterMethods');
+            const filterBtn = document.getElementById('filterBtn');
             
             // State
             let parsedData = null;
             let isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            let lastSearchTerm = '';
             
             // Apply dark mode if needed
             if (isDarkMode) {
@@ -254,15 +249,19 @@
             
             // Event Listeners
             fileInput.addEventListener('change', handleFileUpload);
-            searchInput.addEventListener('input', handleSearch);
             clearSearch.addEventListener('click', clearSearchInput);
             expandAllBtn.addEventListener('click', expandAll);
             collapseAllBtn.addEventListener('click', collapseAll);
             exportBtn.addEventListener('click', exportHTML);
             toggleDarkMode.addEventListener('click', toggleDarkModeHandler);
-            filterClasses.addEventListener('change', handleSearch);
-            filterFields.addEventListener('change', handleSearch);
-            filterMethods.addEventListener('change', handleSearch);
+            filterBtn.addEventListener('click', handleSearch);
+            
+            // Prevent automatic filtering when typing in search box
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleSearch();
+                }
+            });
             
             // File Upload Handler
             function handleFileUpload(e) {
@@ -275,7 +274,7 @@
                 reader.onload = function(event) {
                     const content = event.target.result;
                     parsedData = parseDumpCS(content);
-                    renderResults(parsedData);
+                    renderResults(parsedData); // Show all results initially without filtering
                     
                     // Update UI state
                     initialState.classList.add('hidden');
@@ -412,10 +411,10 @@
                     classHeader.innerHTML = `
                         <div class="flex items-center">
                             <i class="fas fa-chevron-right mr-2 transform transition-transform duration-200"></i>
-                            <h2 class="text-lg font-semibold"><span class="math-inline">\{highlightText\(className, searchTerm && showClasses ? searchTerm \: ''\)\}</h2\>
-</div\>
-<div class\="text\-sm text\-gray\-500"\>
-<span\></span>{classData.fields.length} fields</span>
+                            <h2 class="text-lg font-semibold">${highlightText(className, searchTerm && showClasses ? searchTerm : '')}</h2>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <span>${classData.fields.length} fields</span>
                             <span class="mx-2">|</span>
                             <span>${classData.methods.length} methods</span>
                         </div>
@@ -449,8 +448,8 @@
                             const row = document.createElement('tr');
                             row.className = 'border-t border-gray-100';
                             row.innerHTML = `
-                                <td class="p-2 font-mono"><span class="math-inline">\{highlightText\(field\.type, searchTerm && showFields ? searchTerm \: ''\)\}</td\>
-<td class\="p\-2 font\-mono"\></span>{highlightText(field.name, searchTerm && showFields ? searchTerm : '')}</td>
+                                <td class="p-2 font-mono">${highlightText(field.type, searchTerm && showFields ? searchTerm : '')}</td>
+                                <td class="p-2 font-mono">${highlightText(field.name, searchTerm && showFields ? searchTerm : '')}</td>
                                 <td class="p-2 text-gray-500">${field.offset}</td>
                             `;
                             tbody.appendChild(row);
@@ -484,10 +483,10 @@
                             const row = document.createElement('tr');
                             row.className = 'border-t border-gray-100';
                             row.innerHTML = `
-                                <td class="p-2 font-mono"><span class="math-inline">\{highlightText\(method\.returnType, searchTerm && showMethods ? searchTerm \: ''\)\}</td\>
-<td class\="p\-2 font\-mono"\></span>{highlightText(method.name, searchTerm && showMethods ? searchTerm : '')}</td>
-                                <td class="p-2 font-mono"><span class="math-inline">\{highlightText\(method\.arguments, searchTerm && showMethods ? searchTerm \: ''\)\}</td\>
-<td class\="p\-2 text\-gray\-500"\></span>{method.offset}</td>
+                                <td class="p-2 font-mono">${highlightText(method.returnType, searchTerm && showMethods ? searchTerm : '')}</td>
+                                <td class="p-2 font-mono">${highlightText(method.name, searchTerm && showMethods ? searchTerm : '')}</td>
+                                <td class="p-2 font-mono">${highlightText(method.arguments, searchTerm && showMethods ? searchTerm : '')}</td>
+                                <td class="p-2 text-gray-500">${method.offset}</td>
                             `;
                             tbody.appendChild(row);
                         });
@@ -544,13 +543,24 @@
             // Search handler
             function handleSearch() {
                 const searchTerm = searchInput.value.trim();
+                lastSearchTerm = searchTerm;
                 renderResults(parsedData, searchTerm);
+                
+                // Update UI to indicate filter was applied
+                filterBtn.innerHTML = '<i class="fas fa-check mr-1"></i> Filtered';
+                setTimeout(() => {
+                    filterBtn.innerHTML = '<i class="fas fa-filter mr-1"></i> Filter';
+                }, 1000);
             }
             
             // Clear search
             function clearSearchInput() {
                 searchInput.value = '';
-                handleSearch();
+                if (lastSearchTerm) {
+                    lastSearchTerm = '';
+                    handleSearch();
+                }
+                searchInput.focus();
             }
             
             // Expand all classes
@@ -654,7 +664,7 @@
                 if (classData.methods.length > 0) {
                     text += "Methods:\n";
                     classData.methods.forEach(method => {
-                        text += `  ${method.returnType} <span class="math-inline">\{method\.name\}\(</span>{method.arguments}) @ ${method.offset}\n`;
+                        text += `  ${method.returnType} ${method.name}(${method.arguments}) @ ${method.offset}\n`;
                     });
                 }
                 
@@ -684,28 +694,6 @@
                 } else {
                     toggleDarkMode.innerHTML = '<i class="fas fa-moon mr-1"></i>';
                 }
-            }
-        });
-    </script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const playOverlay = document.getElementById('play-overlay');
-            const playButton = document.getElementById('play-button');
-            const backgroundMusic = document.getElementById('background-music');
-
-            if (playButton && playOverlay && backgroundMusic) {
-                playButton.addEventListener('click', () => {
-                    backgroundMusic.play().then(() => {
-                        playOverlay.style.display = 'none';
-                    }).catch(error => {
-                        console.error("Gagal memutar audio:", error);
-                        playOverlay.style.display = 'none';
-                        alert("Gagal memutar audio. Pastikan file audio ada di folder yang sama.");
-                    });
-                });
-            } else {
-                console.error("Elemen musik tidak ditemukan. Pastikan ID sudah benar.");
             }
         });
     </script>
